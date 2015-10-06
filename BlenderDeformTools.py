@@ -15,16 +15,27 @@ bl_info = {
 	"category": "Sculpt"
 }
 
+def mask_to_vertex_group():
+	bpy.ops.object.mode_set(mode='SCULPT')
+	bpy.ops.paint.hide_show(action='HIDE', area='MASKED')
+	bpy.ops.object.mode_set(mode='EDIT')
+	bpy.ops.mesh.reveal()
+	bpy.ops.object.vertex_group_assign_new()
+
+class MaskToVGOperator(bpy.types.Operator):
+	bl_idname = "wm.mask_to_vg_operator"
+	bl_label = "MaskToVertexGroup"
+
+	def execute(self, context):
+		mask_to_vertex_group()
+		return {'FINISHED'}
+
 class DeformOperator(bpy.types.Operator):
 	bl_idname = "wm.deform_operator"
 	bl_label = "DeformOperator"
 
 	def execute(self, context):
-		bpy.ops.object.mode_set(mode='SCULPT')
-		bpy.ops.paint.hide_show(action='HIDE', area='MASKED')
-		bpy.ops.object.mode_set(mode='EDIT')
-		bpy.ops.mesh.reveal()
-		bpy.ops.object.vertex_group_assign_new()
+		mask_to_vertex_group()
 
 		bm = bmesh.from_edit_mesh(bpy.context.active_object.data)
 		selected_verts = [i.co for i in bm.verts if i.select]
@@ -105,14 +116,18 @@ class DeformTools(bpy.types.Panel):
 
 	def draw(self, context):
 		layout = self.layout
-		row = layout.row()
-		row.operator("wm.deform_operator", text="CreateDeformBox")
+		row_mask = layout.row()
+		row_mask.operator("wm.mask_to_vg_operator", text="Mask to VertexGroup")
+		row_deform = layout.row()
+		row_deform.operator("wm.deform_operator", text="Create DeformBox")
 
 def register():
+	bpy.utils.register_class(MaskToVGOperator)
 	bpy.utils.register_class(DeformOperator)
 	bpy.utils.register_class(DeformTools)
 
 def unregister():
+	bpy.utils.unregister_class(MaskToVGOperator)
 	bpy.utils.unregister_class(DeformOperator)
 	bpy.utils.unregister_class(DeformTools)
 
